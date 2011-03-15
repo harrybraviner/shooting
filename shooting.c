@@ -9,21 +9,32 @@ const double pi = M_PI;
 struct hit_data {int hit; double hit_time;};	// Data type to allow the return of data about hitting
 
 struct hit_data shoot(double x_0, double *y_0, double delta_x, unsigned long x_steps, FILE *print, void (*derivative)(double x, double *y, double *deriv_ret));
+
 /* Function declarations for derivatives */
 void f(double x, double *y, double *deriv_ret);
 void f_pendulum(double x, double *y, double *deriv_ret);
 /* End of function declarations for derivatives */
 
+/* Function declarations for initialisations */
+void init_pendulum(double *x, double *y, double zeta);
+/* End of function declarations for initialisations */
+
 int main(int argc, char *argv[]){
+	unsigned long i;	// Dummy counter variable
+
 
 	FILE *outfile = fopen(outfile_name,"w");
 	if(outfile==NULL) {fprintf(stderr, "Unable to open %s for writing. Quitting.\n",outfile_name); return -1;}
 
-	// Example initial data for a pendulum
-	double y_0[] = {-pi+0.1,0.0};
-	double x_0 = 0.0;
-
-	shoot(x_0,y_0,0.1,1000,outfile,&f_pendulum);	// Make a single shot and write the output
+	
+	// FIXME - want to prototype something like interval bisection here
+	double x_0, y_0[dim];
+	double zeta = 0.25;	// Zeta will parameterise the initial guesses
+	while(1){
+		init_pendulum(&x_0,y_0,zeta);
+		shoot(x_0,y_0,0.1,1000,outfile,&f_pendulum);	// Make a single shot and write the output
+		break;
+	}
 	
 	return 0;
 }
@@ -93,3 +104,11 @@ void f_pendulum(double x, double *y, double *deriv_ret){
 	deriv_ret[1] = -sin(y[0]);
 }
 /* End of function definitions for derivatives */
+
+/* Function definitions for initialisations */
+void init_pendulum(double *x_0,double *y_0, double zeta){
+	*x_0 = 0.0;
+	y_0[0] = -pi + 0.1*cos(zeta*pi/2.0);
+	y_0[1] = 0 + 0.1*sin(zeta*pi/2.0);
+}
+/* End of function definitions for initialisations */
