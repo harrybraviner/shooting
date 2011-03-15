@@ -6,11 +6,13 @@ const unsigned short dim = 2;	// Dimension of the state vector
 char *outfile_name = "output.dat";	// Some output file
 
 const double pi = M_PI;
-int shoot(double x_0, double *y_0, double delta_x, unsigned long x_steps, FILE *print, void (*derivative)(double x, double *y, double *deriv_ret));
+struct hit_data {int hit; double hit_time;};	// Data type to allow the return of data about hitting
+
+struct hit_data shoot(double x_0, double *y_0, double delta_x, unsigned long x_steps, FILE *print, void (*derivative)(double x, double *y, double *deriv_ret));
 /* Function declarations for derivatives */
 void f(double x, double *y, double *deriv_ret);
 void f_pendulum(double x, double *y, double *deriv_ret);
-/* Enf of function declarations for derivatives */
+/* End of function declarations for derivatives */
 
 int main(int argc, char *argv[]){
 
@@ -26,8 +28,9 @@ int main(int argc, char *argv[]){
 	return 0;
 }
 
-int shoot(double x_0, double *y_0, double delta_x, unsigned long x_steps,FILE *print, void (*derivative)(double x, double *y,double *deriv_ret)){
+struct hit_data shoot(double x_0, double *y_0, double delta_x, unsigned long x_steps,FILE *print, void (*derivative)(double x, double *y,double *deriv_ret)){
 	// The shoot() function should perform a shot for given input parameters over the range of x specficied and conpare its shot against a 'hit' function
+	struct hit_data HIT = {0,0.0};	// This gets returned
 	unsigned long i,j;	// Dummy counter variables
 	// Declare a variable to hold the state vector and allocate memory to it. Then initialise it.
 	double *y = malloc(dim*sizeof(double));
@@ -59,8 +62,8 @@ int shoot(double x_0, double *y_0, double delta_x, unsigned long x_steps,FILE *p
 		for (i=0;i<dim;i++) {y_1[i] = y[i] + delta_x*k_3[i];}
 		derivative(x + delta_x,y_1,k_4);
 
-		for (i=0;i<dim;i++) {y[i] = y[i] + delta_x*(k_1[i] + 2*k_2[i] + 2*k_3[i] + k_4[i])/6;}
 		x = x + delta_x;
+		for (i=0;i<dim;i++) {y[i] = y[i] + delta_x*(k_1[i] + 2*k_2[i] + 2*k_3[i] + k_4[i])/6;}
 		/* End of RK4 step */
 		
 		if(print != NULL){
@@ -74,7 +77,7 @@ int shoot(double x_0, double *y_0, double delta_x, unsigned long x_steps,FILE *p
 
 	// FIXME - do I need to free k_1,k_2,k_3,k_4,y_1,y at this point?
 
-	return 0;
+	return HIT;
 }
 
 /* Function definitions for derivatives */
