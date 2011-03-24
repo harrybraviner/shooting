@@ -7,11 +7,12 @@ const unsigned long bisect_limit = 20;
 const unsigned long step_limit = 1000;	// Maximum number of steps to try on a single shot
 const double delta_x = 0.1;		// Step size used in integration
 char *outfile_name = "output.dat";	// Some output file
+double zeta[] = {0,1};	// The interval we wish to perform bisection on. NB. This bears no relation to the variable "zeta" in the SUGRA system
 
 #include "./shoot.c"
 #include "./pendulum.c"
+#include "./SUGRA.c"
 
-double zeta[] = {0,1};	// The interval we wish to perform bisection on
 void (*derivative)(double x, double *y, double *deriv_ret) = &f_pendulum;
 int (*hit_func)(double x, double *y) = &hit_pendulum;
 void (*init_func)(double *x, double *y, double zeta) = &init_pendulum;
