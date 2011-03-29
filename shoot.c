@@ -48,6 +48,12 @@ struct hit_data shoot(double x_0, double *y_0, double delta_x, unsigned long x_s
 		}
 		/* End of writing */
 
+		// The code below checks whether the vector has blown up. If so, it returns the miss direction from the PREVIOUS step.
+		for(i=0;i<dim;i++){
+			if(!isfinite(y[i])) {HIT.hit=0,HIT.hit_time=0.0,HIT.hit_steps=0; return HIT;}
+		}
+		HIT.miss_direction = hit_func(x,y);
+
 		// Test whether we've hit our target yet
 		if(hit_func(x,y)==0) {HIT.hit=1,HIT.miss_direction=0,HIT.hit_time=x,HIT.hit_steps=j+1; return HIT;};
 	}
