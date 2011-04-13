@@ -1,33 +1,40 @@
 /* SUGRA.c
-FIXME - there's still stuff missing from here
-Contains the functions	f_SUGRA (which gives the time derivative for this system, and hence defines the dynamical system)
-			init_SUGRA_AdS 
-
 The ordering of the fields in the state vector is \hat{\beta}, \partial_{\rho} \hat{\beta}, \zeta, \partial_{\rho} \zeta, \hat{F}, \partial_{\rho} \hat{F}, e^{-2\hat{h}}, \partial_{\rho} e^{-2\hat{h}}
 
+Setup instructions:
+	Set the function pointers *derivative, *hit_func, *init_func in shooting.c
+	Set the interval zeta[] in shooting.c
+	Set SUGRA_init_e and SUGRA_hit_e in this file
+For an AdS ---> AdS flow:
+	Set zeta_init
+	Calculate and set g2gamma2 from zeta_init
+For an AdS ---> Li flow:
+	Set z_init
+	Calculate and set g2gamma2 from z_init
+	Calculate and set yp_3[] and yp_5[] in init_Lifshitz()
 */
 
-const double g2gamma2 = 1.1469463;	// g^2 \gamma^2   This turns out to be the only parameter we need to set. IT IS RELATED TO ZETA_INIT
+const double g2gamma2 = 0.097794706866217;	// g^2 \gamma^2   This turns out to be the only physical parameter we need to set.
 
-const double zeta_init = 0.55;	// The value of \zeta of the AdS spacetime in the IR. This should be > (1 - 1/sqrt(6)) ~ 0.5918
+const double zeta_init = 0.8;	// The value of \zeta of the AdS spacetime set up in init_AdS_large_zeta. This should be > (1 - 1/sqrt(6)) ~ 0.5918 and < 1
+const double z_init = 5.5;	// The value of z of the Lifshitz spacetime set up in init_Lifshitz
 
-const double SUGRA_init_e = 0.001;	// The magnitude of the perturbation away from the fixed point
-const double SUGRA_hit_e = 0.01;	// The maximum deviation of any of the fields from the AdS fixed point that we are prepared to count as a hit
+const double SUGRA_init_e = 0.0001;	// The magnitude of the perturbation away from the fixed point
+const double SUGRA_hit_e = 0.005;	// The maximum deviation of any of the fields from the AdS fixed point that we are prepared to count as a hit
 
 /* Start of function declarations */
 void f_SUGRA(double x, double *y, double *deriv_ret);
 double other_zeta(double zeta);
 
-/* Functions for AdS ---> AdS flows */
 void init_AdS_large_zeta(double *x, double *y, double init_param);
 int hit_AdS_small_zeta(double x, double *y);
-/* End of functions for AdS ---> AdS flows */
+void init_Lifshitz(double *x, double *y, double init_param);
 
 /* End of function declarations */
 
 /* Start of function definitions */
 void f_SUGRA(double x, double *y, double *deriv_ret){
-	double A = (-y[6] + (1 + 4*y[2] - y[2]*y[2] - (y[2] + 4*g2gamma2*y[6]*y[6])*y[0]*y[0] - 4*g2gamma2*y[2]*y[6]*y[6])/(4*sqrt(y[2])))/(1 + (y[7]/y[6])*(0.25*y[7]/y[6] - x*y[5] - y[4] - 2) + 2*(x*y[5] + y[4])*(x*y[5] + y[4]) - (y[3]/y[2])*(y[3]/y[2])/8 - (y[1] + 2*y[0])*(y[1] + 2*y[0])/(4*y[2]));	// This is e^{-2\hat{B}}
+	double A = (-y[6] + (1 + 4*y[2] - y[2]*y[2] - (y[2] + 4*g2gamma2*y[6]*y[6])*y[0]*y[0] - 4*g2gamma2*y[2]*y[6]*y[6])/(4*sqrt(y[2])))/(1 + (y[7]/y[6])*(0.25*y[7]/y[6] - x*y[5] - y[4] - 2) + 2*(x*y[5] + y[4]) - (y[3]/y[2])*(y[3]/y[2])/8 - (y[1] + 2*y[0])*(y[1] + 2*y[0])/(4*y[2]));	// This is e^{-2\hat{B}}
 	double B = (1 + 4*y[2] - y[2]*y[2] - (3*y[2] + 4*g2gamma2*y[6]*y[6])*y[0]*y[0] + 4*g2gamma2*y[2]*y[6]*y[6])/(4*sqrt(y[2])) - 2*A*((y[1] + 2*y[0])*(y[1] + 2*y[0])/(4*y[2]) + 2 + x*y[5] + y[4] - y[7]/y[6]);	// This is \partial_{\rho} e^{-2\hat{B}}
 	deriv_ret[0] = y[1];
 	deriv_ret[1] = -2*y[1] + (y[1] + 2*y[0])*(y[7]/y[6] - x*y[5] - y[4] + y[3]/y[2] - 0.5*B/A) + sqrt(y[2])*(y[2] + 2*g2gamma2*y[6]*y[6])*y[0]/A;
@@ -43,6 +50,21 @@ double other_zeta(double x){
 	// There are typically two allowed values of \zeta for each value of g2gamma2. This function calculates the other one
 	double other_zeta = cbrt((2*x*x - 2*x + 1)*sqrt((-48*pow(x,6) + 96*pow(x,5) - 76*pow(x,4) - 32*x*x*x + 128*x*x - 120*x +25)/(3*x*x - 4*x + 1))/(8*3*sqrt(3)*(3*x*x - 4*x + 1)) - (12*pow(x,4) - 4*x*x*x - 12*x*x + 18*x - 13)/(324*x - 108)) + (12*pow(x,4) - 16*x*x*x + 8*x*x + 4*x + 1)/((108*x*x - 144*x +36)*cbrt((2*x*x - 2*x + 1)*sqrt((-48*pow(x,6) + 96*pow(x,5) - 76*pow(x,4) - 32*x*x*x + 128*x*x - 120*x +25)/(3*x*x - 4*x + 1))/(8*3*sqrt(3)*(3*x*x - 4*x + 1)) - (12*pow(x,4) - 4*x*x*x - 12*x*x + 18*x - 13)/(324*x - 108))) - (x-2)/3;
 	return other_zeta;
+}
+
+double large_zeta_from_g2gamma2(double x){
+	// Based on the constant g^2 \gamma^2, this function returns the smaller allowed value of \zeta for an AdS spacetime
+	double C = pow(36*x*sqrt((27+99*x-8*x*x-80*x*x*x)/x) - 64*sqrt(3)*x*x*x + 8*pow(3,3.5)*x + pow(3,3.5),1/3.0); // Helper constant
+
+	double large_zeta = (sqrt(-((12*x*C*C + (32*pow(3,7.0/6.0)*x*x + 16*pow(3,13.0/6.0)*x)*C + 64*pow(3,4.0/3.0)*x*x*x + 4*pow(3,10.0/3.0)*x)*sqrt((12*x*C*C - (16*pow(3,7.0/6.0)*x*x + 8*pow(3,13.0/6.0)*x)*C + 64*pow(3,4.0/3.0)*x*x*x + 4*pow(3,10.0/3.0)*x)/C) - 32*pow(3,13.0/4.0)*x*x*C)/C) + pow(((12*x*C*C - (16*pow(3,7.0/6.0)*x*x + 8*pow(3,13.0/6.0)*x)*C + 64*pow(3,4.0/3.0)*x*x*x + 4*pow(3,10.0/3.0)*x)/C),0.75) + 4*pow(3,13.0/12.0)*x*pow(((12*x*C*C - (16*pow(3,7.0/6.0)*x*x + 8*pow(3,13.0/6.0)*x)*C + 64*pow(3,4.0/3.0)*x*x*x + 4*pow(3,10.0/3.0)*x)/C),0.25))/(8*pow(3,13.0/12.0)*x*pow(((12*x*C*C - (16*pow(3,7.0/6.0)*x*x + 8*pow(3,13.0/6.0)*x)*C + 64*pow(3,4.0/3.0)*x*x*x + 4*pow(3,10.0/3.0)*x)/C),0.25));
+	return large_zeta;
+}
+
+double small_zeta_from_g2gamma2(double x){
+	// Based on the constant g^2 \gamma^2, this function returns the smaller allowed value of \zeta for an AdS spacetime
+	double C = pow(36*x*sqrt((27+99*x-8*x*x-80*x*x*x)/x) - 64*sqrt(3)*x*x*x + 8*pow(3,3.5)*x + pow(3,3.5),1/3.0); // Helper constant
+	double small_zeta = -(sqrt(-((12*x*C*C + (32*pow(3,7.0/6.0)*x*x + 16*pow(3,13.0/6.0)*x)*C + 64*pow(3,4.0/3.0)*x*x*x + 4*pow(3,10.0/3.0)*x)*sqrt((12*x*C*C - (16*pow(3,7.0/6.0)*x*x + 8*pow(3,13.0/6.0)*x)*C + 64*pow(3,4.0/3.0)*x*x*x + 4*pow(3,10.0/3.0)*x)/C) - 32*pow(3,13.0/4.0)*x*x*C)/C) - pow(((12*x*C*C - (16*pow(3,7.0/6.0)*x*x + 8*pow(3,13.0/6.0)*x)*C + 64*pow(3,4.0/3.0)*x*x*x + 4*pow(3,10.0/3.0)*x)/C),0.75) - 4*pow(3,13.0/12.0)*x*pow(((12*x*C*C - (16*pow(3,7.0/6.0)*x*x + 8*pow(3,13.0/6.0)*x)*C + 64*pow(3,4.0/3.0)*x*x*x + 4*pow(3,10.0/3.0)*x)/C),0.25))/(8*pow(3,13.0/12.0)*x*pow(((12*x*C*C - (16*pow(3,7.0/6.0)*x*x + 8*pow(3,13.0/6.0)*x)*C + 64*pow(3,4.0/3.0)*x*x*x + 4*pow(3,10.0/3.0)*x)/C),0.25));
+	return small_zeta;
 }
 
 void init_AdS_large_zeta(double *x, double *y, double init_param){
@@ -80,10 +102,40 @@ void init_AdS_large_zeta(double *x, double *y, double init_param){
 	double pi = M_PI;
 	for(i=0;i<8;i++) {y[i] += SUGRA_init_e*yp_5[i]*cos(init_param*pi) + SUGRA_init_e*yp_6[i]*sin(init_param*pi);}
 }
-// FIXME - write an initialisation function for the Lifshitz spacetime
+
+void init_Lifshitz(double *x, double *y, double init_param){
+	*x = 1.0;
+	// Set y[] to be the Li fixed point for the "lower" s sign choice
+	y[0] = pow((6 + z_init + 2*sqrt(2*(z_init + 4)))/(z_init*z_init*(z_init + 4)),0.25)*sqrt(z_init - 1);	// \hat{\beta}
+	y[1] = 0;	// \partial_{\rho} \hat{\beta}
+	y[2] = sqrt((6 + z_init + 2*sqrt(2*(z_init + 4)))/(z_init*z_init*(z_init + 4)));	// \zeta
+	y[3] = 0;	// \partial_{\rho} \zeta
+	y[4] = z_init;	// \hat{F}
+	y[5] = 0;	// \partial_{\rho} \hat{F}
+	y[6] = (6 + 3*z_init + 2*sqrt(2*(z_init + 4)))/(4*z_init*pow((z_init + 4),1.5)*sqrt(6 + z_init + 2*sqrt(2*(z_init + 4))));	// e^{-2\hat{h}}
+	y[7] = 0;	// \partial_{\rho} e^{-2\hat{h}}
+
+	/* PERTURBATION VECOTRS */
+	// I do not currently have any code in here to generate the vectors along the unstable directions. They must be entered by hand
+	// They are currently set to the values appropriate for z = 
+	double yp_3[] = {-0.052789387276399,-0.22622562248976,-0.0027656771738677,-0.011852136812803,-0.21840896071639,-0.93597796156839,0.01679135477172,0.071958302258553};
+	double yp_5[] = {-0.044912415540833,-0.22450133528799,-0.0074949529824233,-0.037464628259527,-0.18559644585942,-0.9277312168227,0.03848760289135,0.1923859613671};
+	/* ------------------- */
+
+	// Normalise these
+	double yp_3_norm = 0, yp_5_norm = 0;
+	short i;
+	for(i=0;i<8;i++) {yp_3_norm += yp_3[i]*yp_3[i]; yp_5_norm += yp_5[i]*yp_5[i];}
+	yp_3_norm = sqrt(yp_3_norm); yp_5_norm = sqrt(yp_5_norm);
+	for(i=0;i<8;i++) {yp_3[i] = yp_3[i]/yp_3_norm; yp_5[i] = yp_5[i]/yp_5_norm;}
+	// Now perturb the vector
+	double pi = M_PI;
+	for(i=0;i<8;i++) {y[i] += SUGRA_init_e*yp_3[i]*cos(init_param*pi) + SUGRA_init_e*yp_5[i]*sin(init_param*pi);}
+}
 
 int hit_AdS_small_zeta(double x, double *y){
-	double zeta = other_zeta(zeta_init); // The (small) \zeta value of the spacetime that we're aiming for
+	// double zeta = other_zeta(zeta_init); // The (small) \zeta value of the spacetime that we're aiming for
+	double zeta = small_zeta_from_g2gamma2(g2gamma2);	// The \zeta value of the spacetime that we're aiming for
 	if((y[0] - 0)*(y[0] - 0)	// \hat{\beta}
 	+ (y[1] - 0)*(y[1] - 0)		// \partial_{\rho} \hat{\beta}
 	+ (y[2] - zeta)*(y[2] - zeta)	// \zeta
