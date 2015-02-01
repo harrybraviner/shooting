@@ -1,0 +1,6 @@
+#Staring along direction 1.75, with init_e=0.01, z_init=5.5
+#delta_x	blowup x
+0.01	2.19
+0.005	2.195
+0.002	2.190
+0.001	2.189

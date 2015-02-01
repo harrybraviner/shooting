@@ -39,7 +39,7 @@ struct hit_data shoot(double x_0, double *y_0, double delta_x, unsigned long x_s
 		x = x + delta_x;
 		for (i=0;i<dim;i++) {y[i] = y[i] + delta_x*(k_1[i] + 2*k_2[i] + 2*k_3[i] + k_4[i])/6;}
 		/* End of RK4 step */
-		
+
 		/* If we have been passed a file stream, write the trajectory to it */
 		if(print != NULL){
 			fprintf(print,"%lf",x);
@@ -48,9 +48,9 @@ struct hit_data shoot(double x_0, double *y_0, double delta_x, unsigned long x_s
 		}
 		/* End of writing */
 
-		// The code below checks whether the vector has blown up. If so, it returns the miss direction from the PREVIOUS step.
+		// The code below checks whether the vector has blown up. If so, it returns that the miss direction is +1.
 		for(i=0;i<dim;i++){
-			if(!isfinite(y[i])) {HIT.hit=0,HIT.hit_time=0.0,HIT.hit_steps=0; return HIT;}
+			if(!isfinite(y[i])) {HIT.hit=0,HIT.hit_time=x,HIT.hit_steps=j+1; HIT.miss_direction=+1; return HIT;}
 		}
 		HIT.miss_direction = hit_func(x,y);
 
@@ -62,8 +62,8 @@ struct hit_data shoot(double x_0, double *y_0, double delta_x, unsigned long x_s
 	// If I get to this point and haven't hit yet, need to know what direction I've missed by
 	HIT.hit=0;
 	HIT.miss_direction = hit_func(x,y);
-	HIT.hit_time=0.0;
-	HIT.hit_steps=0;
+	HIT.hit_time=x;
+	HIT.hit_steps=j+1;
 	return HIT;
 }
 

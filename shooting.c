@@ -2,21 +2,21 @@
 #include <stdlib.h>
 #include <math.h>
 
-const unsigned short dim = 8;	// Dimension of the state vector
-const unsigned long bisect_limit = 200;
-const unsigned long step_limit = 10000;	// Maximum number of steps to try on a single shot
-const double delta_x = 0.01;		// Step size used in integration
+const unsigned short dim = 2;	// Dimension of the state vector
+const unsigned long bisect_limit = 75;
+const unsigned long step_limit = 30000;	// Maximum number of steps to try on a single shot
+const double delta_x = 0.001;		// Step size used in integration
 char *outfile_name = "output.dat";	// Some output file
 char *outfileb_name = "output0.dat";	// Some output file
-double zeta[] = {1.25,1.75};	// The interval we wish to perform bisection on. NB. This bears no relation to the variable "zeta" in the SUGRA system
+double zeta[] = {-1.0,1.0};	// The interval we wish to perform bisection on. NB. This bears no relation to the variable \zeta in the SUGRA system
 
 #include "./shoot.c"
 #include "./pendulum.c"
 #include "./SUGRA.c"
 
-void (*derivative)(double x, double *y, double *deriv_ret) = &f_SUGRA;
-int (*hit_func)(double x, double *y) = &hit_AdS_small_zeta;
-void (*init_func)(double *x, double *y, double zeta) = &init_Lifshitz;
+void (*derivative)(double x, double *y, double *deriv_ret) = &f_pendulum;
+int (*hit_func)(double x, double *y) = &hit_pendulum;
+void (*init_func)(double *x, double *y, double zeta) = &init_pendulum;
 
 int main(int argc, char *argv[]){
 	unsigned long i;	// Dummy counter variable
@@ -37,7 +37,9 @@ int main(int argc, char *argv[]){
 		if(HIT.hit) {break;}
 		else {miss_sign[i] = HIT.miss_direction; fprintf(stderr,"With zeta = %lf, missed by direction %d.\n",zeta[i],miss_sign[i]);}
 	}
-	if (miss_sign[0]==miss_sign[1]) {printf("Error! The miss directions from %lf and %lf are both %i.\n",zeta[0],zeta[1],miss_sign[0]); return 1;}	// Did we make a bad choice for the ends of the interval? This should only be possible on the first loop
+	if (miss_sign[0]==miss_sign[1]) {printf("Error! The miss directions from %lf and %lf are both %i.\nWrote shot from %lf to %s\n",zeta[0],zeta[1],miss_sign[0],zeta[1],outfile_name);
+	shoot(x_0,y_0,delta_x,step_limit,outfile,derivative,hit_func);
+	return 1;}	// Did we make a bad choice for the ends of the interval? This should only be possible on the first loop
 
 	/* Start of interval bisection */
 	for (i=0;i<bisect_limit;i++){

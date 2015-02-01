@@ -1,0 +1,15 @@
+# The file contains the value of init_param for which a hit was achieved using SUGRA_hit_e=0.005,zeta_init=0.8,delta_x=0.01, [1.25,1.75]
+# SUGRA_init_e	init_param
+0.1	1.490478
+0.075	1.491830
+0.05	1.493546
+0.025	1.495872
+0.01	1.497863
+0.0075	1.498284
+0.005	1.498752
+0.0025	1.499290
+0.001	1.499674
+0.00075	1.499747
+0.0005	1.499823
+0.00025	1.499905
+0.0001	1.499959
